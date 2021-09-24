@@ -5,7 +5,7 @@
 
 
 // Polygon/Matic Web3 API endpoint
-const WEB3_BSC_RPC = "https://rpc-mainnet.maticvigil.com/";
+const WEB3_RPC = "https://matic-mainnet.chainstacklabs.com/";
 
 const REFRESH_TIME = 12000; // in ms : every 12 seconds
 
@@ -54,7 +54,7 @@ function PostJSONRPC(method, params, cb, cbErr) {
         "method": method,
         "params": params
     };
-    postDataJSON(WEB3_BSC_RPC, reqObj, cb, cbErr);
+    postDataJSON(WEB3_RPC, reqObj, cb, cbErr);
 }
 
 function Web3Call(data, toContract, cb, cbErr) {
