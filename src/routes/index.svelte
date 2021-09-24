@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-    
+
     import {onDestroy} from 'svelte';
     import {getLivePrice, openWebSocket, closeWebSocket} from '$lib/ammWeb3.ts';
 
@@ -16,7 +16,6 @@
     var price = "";
     var side = 1;
     var refreshTimerId = 0;
-    
     const pairsInfo = {
         "USDC/ETH": {
             contract: "0x34965ba0ac2451A34a0471F04CCa3F990b8dea27"
@@ -47,7 +46,7 @@
         }
     };
     var currentPair = Object.keys(pairsInfo)[0];
-    
+
     function setTimerID(timerId) {
         refreshTimerId = timerId;
     }
@@ -60,7 +59,9 @@
             clearInterval(refreshTimerId);
         refreshTimerId = 0;
     }
+
     onDestroy(closeAll);
+
     function printErr(errTxt) {
         price = "";
         if (Object.prototype.toString.call(errTxt) === "[object String]")
@@ -68,6 +69,7 @@
         else
             err = "Error";
     }
+
     function printPrice(priceValue) {
         console.log("Price :", priceValue);
         var commaPos = 2;
@@ -98,7 +100,9 @@
         side = (side + 1) % 2;
         getPrice();
     }
+
     openWebSocket(WEB3_RPC, getPrice, printErr);
+
 </script>
 
 <svelte:head>

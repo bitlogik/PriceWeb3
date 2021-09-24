@@ -36,7 +36,7 @@ function openWebSocket(wsurl, openCallback, errCB) {
     ws.onerror = function (errEvent) {
         errCB("Can't connect to the RPC API.")
     };
-    ws.onclose = function(closeEvent) {
+    ws.onclose = function (closeEvent) {
         ws = null;
         if (closeEvent.code == 1006) {
             console.log("Reconnecting");
@@ -48,8 +48,8 @@ function openWebSocket(wsurl, openCallback, errCB) {
 
 function registerReplyHandler(replyHandler, id) {
     if (ws)
-        ws.onmessage = function(evt) {
-            const reply = JSON.parse(evt.data)
+        ws.onmessage = function (evt) {
+            const reply = JSON.parse(evt.data);
             if (reply.id == id)
                 replyHandler(reply.result);
         }
