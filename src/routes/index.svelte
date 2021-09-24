@@ -5,8 +5,11 @@
 <script lang="ts">
     
     import {onDestroy} from 'svelte';
-    import {getLivePrice} from '$lib/ammWeb3.ts';
-    
+    import {getLivePrice, openWebSocket} from '$lib/ammWeb3.ts';
+
+    // Polygon/Matic Web3 API endpoint
+    const WEB3_RPC = "wss://ws-matic-mainnet.chainstacklabs.com";
+
     var err = "";
     var token0Name = "";
     var token1Name = "";
@@ -84,7 +87,7 @@
         side = (side + 1) % 2;
         getPrice();
     }
-    getPrice();
+    openWebSocket(WEB3_RPC, getPrice, printErr);
 </script>
 
 <svelte:head>

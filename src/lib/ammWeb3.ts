@@ -4,9 +4,6 @@
 // License text available at http://www.gnu.org/licenses/agpl.txt
 
 
-// Polygon/Matic Web3 API endpoint
-const WEB3_RPC = "https://matic-mainnet.chainstacklabs.com/";
-
 const REFRESH_TIME = 12000; // in ms : every 12 seconds
 
 // Uniswap v2 / SushiSwap and clones LP calls
@@ -25,36 +22,42 @@ const decimalsMethod = "0x313ce567";
 // symbol() Get the token name
 // const symbolMethod = "95d89b41";
 
+var ws = null;
+var callId = 0;
 
-function postDataJSON(urlp, dataObj, cb, cbErr) {
-    const dataReq = JSON.stringify(dataObj);
-    const request = new Request(urlp, {
-        method: 'POST',
-        headers: {"Content-Type": "application/json"},
-        body: dataReq
-    });
-    fetch(request).then(response => {
-        if (response.status === 200) {
-            response.json().then(data => {
-                cb(data.result);
-            });
-        } else {
-            cbErr("Server Error");
-        }
-    })
-    .catch(error => {
-        cbErr(error);
-    });
+function openWebSocket(wsurl, openCallback, errCB) {
+    ws = new WebSocket(wsurl);
+    ws.onerror = function(errEvent) {
+        errCB("Error when connecting to the RPC API.")
+    };
+    ws.onopen = openCallback;
 }
 
-function PostJSONRPC(method, params, cb, cbErr) {
+function registerReplyHandler(replyHandler, id) {
+    ws.onmessage = function(evt) {
+        const reply = JSON.parse(evt.data)
+        if (reply.id == id)
+            replyHandler(reply.result);
+    }
+}
+
+function registerErrorHandler(errorCallback) {
+    ws.onerror = errorCallback;
+}
+
+function postDataJSON(dataObj) {
+    const dataReq = JSON.stringify(dataObj);
+    ws.send(dataReq);
+}
+
+function PostJSONRPC(method, id, params) {
     const reqObj = {
         "jsonrpc": "2.0",
-        "id": 2,
+        "id": id,
         "method": method,
         "params": params
     };
-    postDataJSON(WEB3_RPC, reqObj, cb, cbErr);
+    postDataJSON(reqObj);
 }
 
 function Web3Call(data, toContract, cb, cbErr) {
@@ -64,7 +67,10 @@ function Web3Call(data, toContract, cb, cbErr) {
         },
         "latest"
     ];
-    PostJSONRPC("eth_call", params, cb, cbErr);
+    callId++;
+    registerReplyHandler(cb, callId);
+    registerErrorHandler(cbErr);
+    PostJSONRPC("eth_call", callId, params);
 }
 
 function getTokens(contractAddr, cb, cbErr) {
@@ -169,5 +175,6 @@ function getLivePrice(pairContract, side, setTimerID, cb, cbErr) {
 }
 
 export {
-    getLivePrice
+    getLivePrice,
+    openWebSocket
 };
