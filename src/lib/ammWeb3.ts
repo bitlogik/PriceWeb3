@@ -30,6 +30,7 @@ function postDataJSON(urlp, dataObj, cb, cbErr) {
     const dataReq = JSON.stringify(dataObj);
     const request = new Request(urlp, {
         method: 'POST',
+        headers: {"Content-Type": "application/json"},
         body: dataReq
     });
     fetch(request).then(response => {
