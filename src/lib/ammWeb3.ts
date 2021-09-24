@@ -25,20 +25,34 @@ const decimalsMethod = "0x313ce567";
 var ws = null;
 var callId = 0;
 
+function closeWebSocket() {
+    if (ws != null) {
+        ws.close();
+    }
+}
+
 function openWebSocket(wsurl, openCallback, errCB) {
     ws = new WebSocket(wsurl);
     ws.onerror = function(errEvent) {
         errCB("Error when connecting to the RPC API.")
     };
+    ws.onclose = function(closeEvent) {
+        ws = null;
+        if (closeEvent.code == 1006) {
+            console.log("Reconnecting");
+            openWebSocket(wsurl, openCallback, errCB);
+        }
+    };
     ws.onopen = openCallback;
 }
 
 function registerReplyHandler(replyHandler, id) {
-    ws.onmessage = function(evt) {
-        const reply = JSON.parse(evt.data)
-        if (reply.id == id)
-            replyHandler(reply.result);
-    }
+    if (ws)
+        ws.onmessage = function(evt) {
+            const reply = JSON.parse(evt.data)
+            if (reply.id == id)
+                replyHandler(reply.result);
+        }
 }
 
 function registerErrorHandler(errorCallback) {
@@ -176,5 +190,6 @@ function getLivePrice(pairContract, side, setTimerID, cb, cbErr) {
 
 export {
     getLivePrice,
-    openWebSocket
+    openWebSocket,
+    closeWebSocket
 };

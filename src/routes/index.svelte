@@ -5,7 +5,7 @@
 <script lang="ts">
     
     import {onDestroy} from 'svelte';
-    import {getLivePrice, openWebSocket} from '$lib/ammWeb3.ts';
+    import {getLivePrice, openWebSocket, closeWebSocket} from '$lib/ammWeb3.ts';
 
     // Polygon/Matic Web3 API endpoint
     const WEB3_RPC = "wss://ws-matic-mainnet.chainstacklabs.com";
@@ -51,10 +51,16 @@
     function setTimerID(timerId) {
         refreshTimerId = timerId;
     }
-    function stopTimer() {
-        clearInterval(refreshTimerId);
+    function closeAll() {
+        stopTimer();
+        closeWebSocket();
     }
-    onDestroy(stopTimer);
+    function stopTimer() {
+        if (refreshTimerId > 0)
+            clearInterval(refreshTimerId);
+        refreshTimerId = 0;
+    }
+    onDestroy(closeAll);
     function printErr(errTxt) {
         err = errTxt;
     }
