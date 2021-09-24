@@ -83,6 +83,7 @@
         token0Name = currentPair.split("/")[side % 2];
         token1Name = currentPair.split("/")[(side + 1) % 2];
         err = "";
+        document.title = `PriceWeb3 - ${tokPriceStr} ${token1Name}`;
         price = tokPriceStr;
     }
     function getPrice() {
