@@ -62,7 +62,11 @@
     }
     onDestroy(closeAll);
     function printErr(errTxt) {
-        err = errTxt;
+        price = "";
+        if (Object.prototype.toString.call(errTxt) === "[object String]")
+            err = errTxt;
+        else
+            err = "Error";
     }
     function printPrice(priceValue) {
         console.log("Price :", priceValue);
@@ -76,6 +80,7 @@
             tokPriceStr = tokPriceStr.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
         token0Name = currentPair.split("/")[side % 2];
         token1Name = currentPair.split("/")[(side + 1) % 2];
+        err = "";
         price = tokPriceStr;
     }
     function getPrice() {

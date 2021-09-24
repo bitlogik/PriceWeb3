@@ -33,8 +33,8 @@ function closeWebSocket() {
 
 function openWebSocket(wsurl, openCallback, errCB) {
     ws = new WebSocket(wsurl);
-    ws.onerror = function(errEvent) {
-        errCB("Error when connecting to the RPC API.")
+    ws.onerror = function (errEvent) {
+        errCB("Can't connect to the RPC API.")
     };
     ws.onclose = function(closeEvent) {
         ws = null;
