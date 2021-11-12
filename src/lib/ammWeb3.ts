@@ -22,174 +22,195 @@ const decimalsMethod = "0x313ce567";
 // symbol() Get the token name
 // const symbolMethod = "95d89b41";
 
-var ws = null;
-var callId = 0;
 
-function closeWebSocket() {
-    if (ws != null) {
-        ws.close();
-    }
-}
-
-function openWebSocket(wsurl, openCallback, errCB) {
-    ws = new WebSocket(wsurl);
-    ws.onerror = function (errEvent) {
-        errCB("Can't connect to the RPC API.")
-    };
-    ws.onclose = function (closeEvent) {
-        ws = null;
-        if (closeEvent.code == 1006) {
-            console.log("Reconnecting");
-            openWebSocket(wsurl, openCallback, errCB);
-        }
-    };
-    ws.onopen = openCallback;
-}
-
-function registerReplyHandler(replyHandler, id) {
-    if (ws)
-        ws.onmessage = function (evt) {
-            const reply = JSON.parse(evt.data);
-            if (reply.id == id)
-                replyHandler(reply.result);
-        }
-}
-
-function registerErrorHandler(errorCallback) {
-    ws.onerror = errorCallback;
-}
-
-function postDataJSON(dataObj) {
-    const dataReq = JSON.stringify(dataObj);
-    ws.send(dataReq);
-}
-
-function PostJSONRPC(method, id, params) {
-    const reqObj = {
-        "jsonrpc": "2.0",
-        "id": id,
-        "method": method,
-        "params": params
-    };
-    postDataJSON(reqObj);
-}
-
-function Web3Call(data, toContract, cb, cbErr) {
-    const params = [{
-            "data": data,
-            "to": toContract
-        },
-        "latest"
-    ];
-    callId++;
-    registerReplyHandler(cb, callId);
-    registerErrorHandler(cbErr);
-    PostJSONRPC("eth_call", callId, params);
-}
-
-function getTokens(contractAddr, cb, cbErr) {
-    // Input the Uniswap v2 smart-contracts address
-    // return (callback) array of the ERC20 smart-contracts pair addresses
-    //  cb([addrToken0, addrToken1])
-    var tokensAddresses = [];
-    var decodeTokenAddr = function (dataHex) {
-        if (dataHex) {
-            // token0/1 returns (address)
-            const addr = dataHex.slice(26);
-            return "0x" + addr;
+class Web3RPC {
+    constructor(rpcURL, cbOK, cbErr) {
+        this.ws = null;
+        this.callId = 0;
+        if (rpcURL.startsWith("wss")) {
+            // WebSocket
+            this.wsConnect(rpcURL, cbOK, cbErr);
+        } else if (rpcURL.startsWith("https")) {
+            // https
+            this.RPCURL = rpcURL;
+            setTimeout(cbOK, 250);
         } else
-            cbErr("Error getting tokens address.")
+            cbErr("Unsupported RPC connection scheme : wss or https.")
     }
-    var processToken1 = function (dataHex) {
-        tokensAddresses.push(decodeTokenAddr(dataHex));
-        cb(tokensAddresses);
-    }
-    var processToken0 = function (dataHex) {
-        tokensAddresses.push(decodeTokenAddr(dataHex));
-        Web3Call(token1Call, contractAddr, processToken1, cbErr);
-    }
-    Web3Call(token0Call, contractAddr, processToken0, cbErr);
-}
-
-function getDecimals(contractAddr, cb, cbErr) {
-    var decodeReserve = function (dataHex) {
-        // decimals() returns (uint8 decimals)
-        const tokenDecimals = parseInt(dataHex.slice(2, 66), 16);
-        cb(tokenDecimals);
-    }
-    Web3Call(decimalsMethod, contractAddr, decodeReserve, cbErr);
-}
-
-function contractsDecimal(contractAddresses, cb, cbErr) {
-    // Input array of contract 2 addresses (the ERC20 smart-contracts pair)
-    // return (callback) array of decimals of the ERC20 tokens
-    var tokensDecimals = [];
-    var processToken1 = function (decimal1) {
-        tokensDecimals.push(decimal1);
-        cb(tokensDecimals);
-    }
-    var processToken0 = function (decimal0) {
-        tokensDecimals.push(decimal0);
-        getDecimals(contractAddresses[1], processToken1, cbErr);
-    }
-    getDecimals(contractAddresses[0], processToken0, cbErr);
-}
-
-function getReserves(contractAddr, shift0, shift1, cb, cbErr) {
-    var decodeReserve = function (dataHex) {
-        // getReserves returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast)
-        const reservesObj = {
-            "_reserve0": parseInt(dataHex.slice(2, 66 - shift0), 16),
-            "_reserve1": parseInt(dataHex.slice(66, 130 - shift1), 16),
-            "_blockTimestampLast": parseInt(dataHex.slice(130, 194), 16)
+    wsConnect(rpcURL, cbOK, cbErr) {
+        this.ws = new WebSocket(rpcURL);
+        this.ws.onerror = function (errEvent) {
+            cbErr("Can't connect to the RPC API.")
         };
-        cb(reservesObj);
-    }
-    Web3Call(getReservesMethod, contractAddr, decodeReserve, cbErr);
-}
-
-function getLivePrice(pairContract, side, setTimerID, cb, cbErr) {
-
-    var readPoolReserves = function (pairDecimals) {
-
-        var computePrice = function (resObj) {
-            var price = 0;
-            if (side == 0)
-                price = resObj._reserve1 / resObj._reserve0 * shiftFactor;
-            else
-                price = resObj._reserve0 / resObj._reserve1 * shiftFactor;
-            cb(price);
+        this.ws.onclose = function (closeEvent) {
+            this.ws = null;
+            if (closeEvent.code == 1006) {
+                console.log("Reconnecting");
+                this.wsConnect(rpcURL, cbOK, cbErr);
+            }
         };
-
-        var TOKEN_0_UNIT = pairDecimals[0];
-        var TOKEN_1_UNIT = pairDecimals[1];
-        // Shift with hex reading a millionth of the token unit
-        var shift0 = Math.floor((3 * TOKEN_0_UNIT) / 4) - 5;
-        var shift1 = Math.floor((3 * TOKEN_1_UNIT) / 4) - 5;
-        if (shift0 < 0)
-            shift0 = 0;
-        if (shift1 < 0)
-            shift1 = 0;
-        var shiftFactor = 1;
-        if (side == 0)
-            shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, TOKEN_0_UNIT - TOKEN_1_UNIT);
+        this.ws.onopen = cbOK;
+    }
+    close() {
+        if (this.ws != null) {
+            this.ws.close();
+        }
+    }
+    registerReplyHandler(replyHandler, id) {
+        if (this.ws)
+            this.ws.onmessage = function (evt) {
+                const reply = JSON.parse(evt.data);
+                if (reply.id == id)
+                    replyHandler(reply.result);
+            }
         else
-            shiftFactor = Math.pow(16, shift0 - shift1) * Math.pow(10, TOKEN_1_UNIT - TOKEN_0_UNIT);
-        getReserves(pairContract, shift0, shift1, computePrice, cbErr);
-        // Call getReserves every refresh time
-        var timerID = window.setInterval(getReserves, REFRESH_TIME, pairContract, shift0, shift1, computePrice, cbErr);
-        // Callback to share the timerID
-        setTimerID(timerID);
+            this.onresponse = function (evt) {
+                evt.json().then(reply => {
+                    if (reply.id == id)
+                        replyHandler(reply.result);
+                });
+            }
     }
-    var readTokensContracts = function (tokensContractArray) {
-        contractsDecimal(tokensContractArray, readPoolReserves, cbErr);
+    registerErrorHandler(errorCallback) {
+        if (this.ws)
+            this.ws.onerror = errorCallback;
+        else
+            this.onerror = errorCallback;
     }
+    postDataJSON(dataObj) {
+        const dataReq = JSON.stringify(dataObj);
+        if (this.ws)
+            this.ws.send(dataReq);
+        else
+            fetch(this.RPCURL, {
+                method: "POST",
+                body: JSON.stringify(dataObj)
+            })
+            .then(this.onresponse)
+            .catch(this.onerror);
+    }
+    PostJSONRPC(method, id, params) {
+        const reqObj = {
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": method,
+            "params": params
+        };
+        this.postDataJSON(reqObj);
+    }
+    Web3Call(data, toContract, cb, cbErr) {
+        const params = [{
+                "data": data,
+                "to": toContract
+            },
+            "latest"
+        ];
+        this.callId++;
+        this.registerReplyHandler(cb, this.callId);
+        if (this.ws) {
 
-    getTokens(pairContract, readTokensContracts, cbErr);
+            this.registerErrorHandler(cbErr);
+        }
+        this.PostJSONRPC("eth_call", this.callId, params);
+    }
+    getTokens(contractAddr, cb, cbErr) {
+        // Input the Uniswap v2 smart-contracts address
+        // return (callback) array of the ERC20 smart-contracts pair addresses
+        //  cb([addrToken0, addrToken1])
+        var tokensAddresses = [];
+        var decodeTokenAddr = (dataHex) => {
+            if (dataHex) {
+                // token0/1 returns (address)
+                const addr = dataHex.slice(26);
+                return "0x" + addr;
+            } else
+                cbErr("Error getting tokens address.")
+        }
+        var processToken1 = (dataHex) => {
+            tokensAddresses.push(decodeTokenAddr(dataHex));
+            cb(tokensAddresses);
+        }
+        var processToken0 = (dataHex) => {
+            tokensAddresses.push(decodeTokenAddr(dataHex));
+            this.Web3Call(token1Call, contractAddr, processToken1, cbErr);
+        }
+        this.Web3Call(token0Call, contractAddr, processToken0, cbErr);
+    }
+    getDecimals(contractAddr, cb, cbErr) {
+        var decodeReserve = (dataHex) => {
+            // decimals() returns (uint8 decimals)
+            const tokenDecimals = parseInt(dataHex.slice(2, 66), 16);
+            cb(tokenDecimals);
+        }
+        this.Web3Call(decimalsMethod, contractAddr, decodeReserve, cbErr);
+    }
+    contractsDecimal(contractAddresses, cb, cbErr) {
+        // Input array of contract 2 addresses (the ERC20 smart-contracts pair)
+        // return (callback) array of decimals of the ERC20 tokens
+        var tokensDecimals = [];
+        var processToken1 = (decimal1) => {
+            tokensDecimals.push(decimal1);
+            cb(tokensDecimals);
+        }
+        var processToken0 = (decimal0) => {
+            tokensDecimals.push(decimal0);
+            this.getDecimals(contractAddresses[1], processToken1, cbErr);
+        }
+        this.getDecimals(contractAddresses[0], processToken0, cbErr);
+    }
+    getReserves(contractAddr, shift0, shift1, cb, cbErr) {
+        var decodeReserve = (dataHex) => {
+            // getReserves returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast)
+            const reservesObj = {
+                "_reserve0": parseInt(dataHex.slice(2, 66 - shift0), 16),
+                "_reserve1": parseInt(dataHex.slice(66, 130 - shift1), 16),
+                "_blockTimestampLast": parseInt(dataHex.slice(130, 194), 16)
+            };
+            cb(reservesObj);
+        }
+        this.Web3Call(getReservesMethod, contractAddr, decodeReserve, cbErr);
+    }
+    getLivePrice(pairContract, side, setTimerID, cb, cbErr) {
+
+        var readPoolReserves = (pairDecimals) => {
+
+            var computePrice = (resObj) => {
+                var price = 0;
+                if (side == 0)
+                    price = resObj._reserve1 / resObj._reserve0 * shiftFactor;
+                else
+                    price = resObj._reserve0 / resObj._reserve1 * shiftFactor;
+                cb(price);
+            };
+
+            var TOKEN_0_UNIT = pairDecimals[0];
+            var TOKEN_1_UNIT = pairDecimals[1];
+            // Shift with hex reading a millionth of the token unit
+            var shift0 = Math.floor((3 * TOKEN_0_UNIT) / 4) - 5;
+            var shift1 = Math.floor((3 * TOKEN_1_UNIT) / 4) - 5;
+            if (shift0 < 0)
+                shift0 = 0;
+            if (shift1 < 0)
+                shift1 = 0;
+            var shiftFactor = 1;
+            if (side == 0)
+                shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, TOKEN_0_UNIT - TOKEN_1_UNIT);
+            else
+                shiftFactor = Math.pow(16, shift0 - shift1) * Math.pow(10, TOKEN_1_UNIT - TOKEN_0_UNIT);
+            this.getReserves(pairContract, shift0, shift1, computePrice, cbErr);
+            // Call getReserves every refresh time
+            var timerID = window.setInterval(this.getReserves.bind(this), REFRESH_TIME, pairContract, shift0, shift1, computePrice, cbErr);
+            // Callback to share the timerID
+            setTimerID(timerID);
+        }
+        var readTokensContracts = (tokensContractArray) => {
+            this.contractsDecimal(tokensContractArray, readPoolReserves, cbErr);
+        }
+
+        this.getTokens(pairContract, readTokensContracts, cbErr);
+    }
 }
 
 export {
-    getLivePrice,
-    openWebSocket,
-    closeWebSocket
+    Web3RPC,
 };

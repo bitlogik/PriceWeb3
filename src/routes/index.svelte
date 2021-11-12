@@ -5,7 +5,7 @@
 <script lang="ts">
 
     import {onDestroy} from 'svelte';
-    import {getLivePrice, openWebSocket, closeWebSocket} from '$lib/ammWeb3.ts';
+    import {Web3RPC} from '$lib/ammWeb3.ts';
 
     // Polygon/Matic Web3 API endpoint
     const WEB3_RPC = "wss://ws-matic-mainnet.chainstacklabs.com";
@@ -52,7 +52,7 @@
     }
     function closeAll() {
         stopTimer();
-        closeWebSocket();
+        web3.close();
     }
     function stopTimer() {
         if (refreshTimerId > 0)
@@ -91,7 +91,7 @@
         if (refreshTimerId != 0)
             stopTimer();
         price = "";
-        getLivePrice(pairsInfo[currentPair].contract, side, setTimerID, printPrice, printErr);
+        web3.getLivePrice(pairsInfo[currentPair].contract, side, setTimerID, printPrice, printErr);
     }
     function pairChanged(evt) {
         currentPair = evt.target.value;
@@ -102,7 +102,7 @@
         getPrice();
     }
 
-    openWebSocket(WEB3_RPC, getPrice, printErr);
+    var web3 = new Web3RPC(WEB3_RPC, getPrice, printErr);
 
 </script>
 
