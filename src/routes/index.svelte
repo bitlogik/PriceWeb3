@@ -8,7 +8,7 @@
     import {Web3RPC} from '$lib/ammWeb3.ts';
 
     // Polygon/Matic Web3 API endpoint
-    const WEB3_RPC = "wss://ws-matic-mainnet.chainstacklabs.com";
+    const WEB3_RPC = "https://polygon-rpc.com";
 
     var err = "";
     var token0Name = "";
