@@ -40,6 +40,6 @@ Brotli "br" and/or gzip is highly recommended to be activated as content encodin
 
 The current recommended configuration for the Content-Security-Policy header is :  
 ```
-default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; connect-src 'self' wss://ws-matic-mainnet.chainstacklabs.com;
+default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; connect-src 'self' https://polygon-rpc.com;
 ```
 
