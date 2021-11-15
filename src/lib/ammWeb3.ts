@@ -6,21 +6,22 @@
 
 const REFRESH_TIME = 15000; // in ms : every 15 seconds
 
+
+// Uniswap v2 / SushiSwap and clones factory calls
+// getPair(address,address)
+const getPairMethod = "0xe6a43905";
+
 // Uniswap v2 / SushiSwap and clones LP calls
 //   For a pair, LP contract
 //   https://docs.uniswap.org/protocol/V2/reference/smart-contracts/pair
 // getReserves()
 const getReservesMethod = "0x0902f1ac";
-// token0()
-const token0Call = "0x0dfe1681";
-// token1()
-const token1Call = "0xd21220a7";
 
 //  ERC20 calls for tokens
 // decimals()
 const decimalsMethod = "0x313ce567";
 // symbol() Get the token name
-// const symbolMethod = "95d89b41";
+// const symbolMethod = "0x95d89b41";
 
 
 class Web3RPC {
@@ -113,36 +114,33 @@ class Web3RPC {
         }
         this.PostJSONRPC("eth_call", this.callId, params);
     }
-    getTokens(contractAddr, cb, cbErr) {
-        // Input the Uniswap v2 smart-contracts address
-        // return (callback) array of the ERC20 smart-contracts pair addresses
-        //  cb([addrToken0, addrToken1])
-        var tokensAddresses = [];
-        var decodeTokenAddr = (dataHex) => {
-            if (dataHex) {
-                // token0/1 returns (address)
-                const addr = dataHex.slice(26);
-                return "0x" + addr;
-            } else
-                cbErr("Error getting tokens address.")
-        }
-        var processToken1 = (dataHex) => {
-            tokensAddresses.push(decodeTokenAddr(dataHex));
-            cb(tokensAddresses);
-        }
-        var processToken0 = (dataHex) => {
-            tokensAddresses.push(decodeTokenAddr(dataHex));
-            this.Web3Call(token1Call, contractAddr, processToken1, cbErr);
-        }
-        this.Web3Call(token0Call, contractAddr, processToken0, cbErr);
-    }
     getDecimals(contractAddr, cb, cbErr) {
         var decodeReserve = (dataHex) => {
+            console.log("get decimals");
+            console.log(dataHex);
             // decimals() returns (uint8 decimals)
             const tokenDecimals = parseInt(dataHex.slice(2, 66), 16);
             cb(tokenDecimals);
         }
         this.Web3Call(decimalsMethod, contractAddr, decodeReserve, cbErr);
+    }
+    getPair(factoryContract, token0addr, token1addr, cb, cbErr){
+        var decodePair = (dataHex) => {
+            console.log("get pair");
+            console.log(dataHex);
+            cb("0x" + dataHex.slice(26));
+            // cbErr no pair
+        }
+        var token0uintAddr = token0addr;
+        var token1uintAddr = token1addr;
+        if (token0uintAddr.startsWith("0x"))
+            token0uintAddr = token0uintAddr.slice(2);
+        if (token1uintAddr.startsWith("0x"))
+            token1uintAddr = token1uintAddr.slice(2);
+        token0uintAddr = "000000000000000000000000" + token0uintAddr;
+        token1uintAddr = "000000000000000000000000" + token1uintAddr;
+        var dataArg = getPairMethod+ token0uintAddr + token1uintAddr;
+        this.Web3Call(dataArg, factoryContract, decodePair, cbErr);
     }
     contractsDecimal(contractAddresses, cb, cbErr) {
         // Input array of contract 2 addresses (the ERC20 smart-contracts pair)
@@ -170,44 +168,45 @@ class Web3RPC {
         }
         this.Web3Call(getReservesMethod, contractAddr, decodeReserve, cbErr);
     }
-    getLivePrice(pairContract, side, setTimerID, cb, cbErr) {
+    getLivePrice(swapFactory, token0, token1, side, setTimerID, cb, cbErr) {
 
-        var readPoolReserves = (pairDecimals) => {
+        var readTokensContracts = (pairContract) => {
 
-            var computePrice = (resObj) => {
-                var price = 0;
-                if (side == 0)
-                    price = resObj._reserve1 / resObj._reserve0 * shiftFactor;
-                else
-                    price = resObj._reserve0 / resObj._reserve1 * shiftFactor;
-                cb(price);
-            };
+            var readPoolReserves = () => {
 
-            var TOKEN_0_UNIT = pairDecimals[0];
-            var TOKEN_1_UNIT = pairDecimals[1];
-            // Shift with hex reading a millionth of the token unit
-            var shift0 = Math.floor((3 * TOKEN_0_UNIT) / 4) - 5;
-            var shift1 = Math.floor((3 * TOKEN_1_UNIT) / 4) - 5;
-            if (shift0 < 0)
-                shift0 = 0;
-            if (shift1 < 0)
-                shift1 = 0;
-            var shiftFactor = 1;
-            if (side == 0)
-                shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, TOKEN_0_UNIT - TOKEN_1_UNIT);
-            else
-                shiftFactor = Math.pow(16, shift0 - shift1) * Math.pow(10, TOKEN_1_UNIT - TOKEN_0_UNIT);
-            this.getReserves(pairContract, shift0, shift1, computePrice, cbErr);
-            // Call getReserves every refresh time
-            var timerID = window.setInterval(this.getReserves.bind(this), REFRESH_TIME, pairContract, shift0, shift1, computePrice, cbErr);
-            // Callback to share the timerID
-            setTimerID(timerID);
+                var computePrice = (resObj) => {
+                    var price = 0;
+                    if (side == 0)
+                        price = resObj._reserve1 / resObj._reserve0;
+                    else
+                        price = resObj._reserve0 / resObj._reserve1;
+                    cb(price * shiftFactor);
+                };
+
+                var TOKEN_0_UNIT = token0.decimals;
+                var TOKEN_1_UNIT = token1.decimals;
+                // Shift with hex reading a millionth of the token unit
+                var shift0 = Math.floor((3 * token0.decimals) / 4) - 5;
+                if (shift0 < 0)
+                    shift0 = 0;
+                var shift1 = Math.floor((3 * token1.decimals) / 4) - 5;
+                if (shift1 < 0)
+                    shift1 = 0;
+                var shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, token0.decimals - token1.decimals);
+                if (side == 1)
+                    [shift0, shift1] = [shift1, shift0];
+                this.getReserves(pairContract, shift0, shift1, computePrice, cbErr);
+                // Call getReserves every refresh time
+                var timerID = window.setInterval(this.getReserves.bind(this), REFRESH_TIME, pairContract, shift0, shift1, computePrice, cbErr);
+                // Callback to share the timerID
+                setTimerID(timerID);
+            }
+            
+            // this.contractsDecimal(tokensContractArray, readPoolReserves, cbErr);
+            readPoolReserves();
+            
         }
-        var readTokensContracts = (tokensContractArray) => {
-            this.contractsDecimal(tokensContractArray, readPoolReserves, cbErr);
-        }
-
-        this.getTokens(pairContract, readTokensContracts, cbErr);
+        this.getPair(swapFactory, token0.addr, token1.addr, readTokensContracts, console.log);
     }
 }
 
