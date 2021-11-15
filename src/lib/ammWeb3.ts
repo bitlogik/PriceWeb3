@@ -16,13 +16,11 @@ const getPairMethod = "0xe6a43905";
 //   https://docs.uniswap.org/protocol/V2/reference/smart-contracts/pair
 // getReserves()
 const getReservesMethod = "0x0902f1ac";
-
-//  ERC20 calls for tokens
+//  ERC20 calls for LP token
 // decimals()
 const decimalsMethod = "0x313ce567";
-// symbol() Get the token name
-// const symbolMethod = "0x95d89b41";
 
+const ZERO256 = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 class Web3RPC {
     constructor(rpcURL, cbOK, cbErr) {
@@ -128,8 +126,10 @@ class Web3RPC {
         var decodePair = (dataHex) => {
             console.log("get pair");
             console.log(dataHex);
-            cb("0x" + dataHex.slice(26));
-            // cbErr no pair
+            if (dataHex == ZERO256 || dataHex == "0x")
+                cbErr("No market for this pair.")
+            else
+                cb("0x" + dataHex.slice(26));
         }
         var token0uintAddr = token0addr;
         var token1uintAddr = token1addr;
@@ -168,7 +168,7 @@ class Web3RPC {
         }
         this.Web3Call(getReservesMethod, contractAddr, decodeReserve, cbErr);
     }
-    getLivePrice(swapFactory, token0, token1, side, setTimerID, cb, cbErr) {
+    getLivePrice(swapFactory, token0, token1, side, setTimerID, cb, cbErr, warnCb) {
 
         var readTokensContracts = (pairContract) => {
 
@@ -176,6 +176,10 @@ class Web3RPC {
 
                 var computePrice = (resObj) => {
                     var price = 0;
+                    console.log(resObj._reserve0);
+                    console.log(resObj._reserve1);
+                    if (resObj._reserve0 < 10000000 && resObj._reserve1 < 10000000)
+                        warnCb("Low liquidity and accuracy");
                     if (side == 0)
                         price = resObj._reserve1 / resObj._reserve0;
                     else
@@ -206,7 +210,7 @@ class Web3RPC {
             readPoolReserves();
             
         }
-        this.getPair(swapFactory, token0.addr, token1.addr, readTokensContracts, console.log);
+        this.getPair(swapFactory, token0.addr, token1.addr, readTokensContracts, cbErr);
     }
 }
 

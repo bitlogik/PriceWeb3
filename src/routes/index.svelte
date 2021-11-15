@@ -11,6 +11,7 @@
     const WEB3_RPC = "https://polygon-rpc.com";
 
     var err = "";
+    var warn = "";
     var token0Name = "";
     var token1Name = "";
     var price = "";
@@ -24,6 +25,15 @@ const tokens = {
     "BTC": {
         "decimals": 8,
         "addr": "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6"
+    },
+    "MATIC": {
+        "decimals": 18,
+        "addr": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+    },
+    "AVAX": {
+        "decimals": 18,
+        "addr": "0x2C89bbc92BD86F8075d1DEcc58C7F4E0107f286b"
+    
     },
     "USDT": {
         "decimals": 6,
@@ -137,6 +147,10 @@ const tokens = {
         "decimals": 18,
         "addr": "0x3cef98bb43d732e2f285ee605a8158cde967d219"
     },
+    "BIFI": {
+        "decimals": 18,
+        "addr": "0xfbdd194376de19a88118e84e279b977f165d01b8"
+    },
     "LPT": {
         "decimals": 18,
         "addr": "0x3962f4a0a0051dcce0be73a7e09cef5756736712"
@@ -208,17 +222,13 @@ const tokens = {
     "1INCH": {
         "decimals": 18,
         "addr": "0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f"
-    },
-    "FXS": {
-        "decimals": 18,
-        "addr": "0x1a3acf6d19267e2d3e7f898f42803e90c9219062"
     }
 };
 
 
     var SushiSwapFactoryAddress = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
     var tokenA = Object.keys(tokens)[0];  //  ETH
-    var tokenB = Object.keys(tokens)[3];  // USDC
+    var tokenB = Object.keys(tokens)[5];  // USDC
 
     function setTimerID(timerId) {
         refreshTimerId = timerId;
@@ -236,7 +246,6 @@ const tokens = {
     onDestroy(closeAll);
 
     function printErr(errTxt) {
-        price = "";
         console.log("ERROR");
         console.log(errTxt);
         if (Object.prototype.toString.call(errTxt) === "[object String]")
@@ -244,9 +253,19 @@ const tokens = {
         else
             err = "Error";
     }
+    function printWarn(errTxt) {
+        console.log("Warning");
+        console.log(errTxt);
+        if (Object.prototype.toString.call(errTxt) === "[object String]")
+            warn = errTxt;
+        else
+            warn = "Warning";
+    }
 
     function printPrice(priceValue) {
         console.log("Price :", priceValue);
+        token0Name = tokenA;
+        token1Name = tokenB;
         var commaPos = 2;
         if (priceValue > 200)
             commaPos = 0;
@@ -255,25 +274,29 @@ const tokens = {
         var tokPriceStr = priceValue.toFixed(commaPos);
         if (commaPos < 3)
             tokPriceStr = tokPriceStr.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
-        token0Name = tokenA;
-        token1Name = tokenB;
-        err = "";
-        document.title = `PriceWeb3 - ${tokPriceStr} ${token1Name}`;
+        document.title = `PriceWeb3 ${tokPriceStr} ${token1Name}`;
         price = tokPriceStr;
     }
     function getPrice() {
         // Cancel the existing refresh timer
         if (refreshTimerId != 0)
             stopTimer();
-        price = "";
+        if (tokenA == tokenB) {
+            warn = "Same unit"
+            printPrice(1);
+            return;
+        }
         var tokenAdata = tokens[tokenA];
         var tokenBdata = tokens[tokenB];
         var side = 0;
         if (parseInt(tokenAdata.addr, 16) > parseInt(tokenBdata.addr, 16))
             side = 1;
-        web3.getLivePrice(SushiSwapFactoryAddress, tokenAdata, tokenBdata, side, setTimerID, printPrice, printErr);
+        web3.getLivePrice(SushiSwapFactoryAddress, tokenAdata, tokenBdata, side, setTimerID, printPrice, printErr, printWarn);
     }
     function pairChanged(evt) {
+        price = "";
+        warn = "";
+        err = "";
         tick().then(() => { // Wait for tokens variable refreshed
             closeAll();
             getPrice();
@@ -292,39 +315,47 @@ const tokens = {
   <h1>PriceWeb3</h1>
   <div class="hero-body has-text-centered">
     <div class="login">
-      <div>Realtime Price<br>
-      on SushiSwap (Polygon)</div>
+      <div>DeFi Realtime Price<br>
+      <small>on SushiSwap (Polygon)</small></div>
       
-      
-      <div class="select">
-        <select on:change={pairChanged} bind:value={tokenA}>
-            {#each Object.keys(tokens) as token1}
-                <option value={token1}>
-                    {token1}
-                </option>
-            {/each}
-        </select>
-      </div>
-      price in
-      <div class="select">
-        <select on:change={pairChanged} bind:value={tokenB}>
-            {#each Object.keys(tokens) as token2}
-                <option value={token2}>
-                    {token2}
-                </option>
-            {/each}
-        </select>
+      <div class="columns is-mobile">
+            <div class="column">
+              <div class="select">
+                <select on:change={pairChanged} bind:value={tokenA}>
+                    {#each Object.keys(tokens) as token1}
+                        <option value={token1}>
+                            {token1}
+                        </option>
+                    {/each}
+                </select>
+              </div>
+            </div>
+          <div class="column midcol">
+            in
+          </div>
+              <div class="column">
+                  <div class="select">
+                    <select on:change={pairChanged} bind:value={tokenB}>
+                        {#each Object.keys(tokens) as token2}
+                            <option value={token2}>
+                                {token2}
+                            </option>
+                        {/each}
+                    </select>
+                  </div>
+            </div>
       </div>
       
       <div class="priceOut">
         {#if price}
             1 {token0Name} =<br>
             {price} {token1Name}
-        {:else}
+        {:else if !err}
             Loading price ...
         {/if}
       </div>
       <div class="error">{err}</div>
+      <div class="warning">{warn}</div>
     </div>
   </div>
 </section>
@@ -345,11 +376,19 @@ section {
   justify-content: center;
   padding-top: 1.5rem;
 }
-
+.select select:not([multiple]) {
+  padding-right: 0.8em;
+}
+.select:not(.is-multiple):not(.is-loading)::after {
+  right: 0.5em;
+}
+.midcol {
+  padding-top: 1.2em;
+}
 .login {
   border-radius: 16px;
   padding: 2.5rem 0;
-  width: 300px;
+  width: 280px;
   box-shadow: 8px 8px 15px #D9DDE6;
   background-color: #f8f8fd;
 }
@@ -377,6 +416,9 @@ section {
 }
 .error {
   color: #EE4040;
+}
+.warning {
+  color: #FFAB4F;
 }
 .hero-body {
   flex-grow: unset;
