@@ -4,7 +4,7 @@
 // License text available at http://www.gnu.org/licenses/agpl.txt
 
 
-const REFRESH_TIME = 12000; // in ms : every 12 seconds
+const REFRESH_TIME = 15000; // in ms : every 15 seconds
 
 // Uniswap v2 / SushiSwap and clones LP calls
 //   For a pair, LP contract
