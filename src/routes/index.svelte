@@ -363,7 +363,7 @@ const tokens = {
 
 <style>
 section {
-  font-size: 1.2em;
+  font-size: 1em;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -429,5 +429,15 @@ input {
 
 a {
   font-weight: 600;
+}
+
+@media (min-width: 720px) {
+  .login {
+    padding: 2.75rem 0.5rem;
+    width: 360px;
+  }
+  section {
+    font-size: 1.25em;
+  }
 }
 </style>
