@@ -8,7 +8,7 @@
     import {Web3RPC} from '$lib/ammWeb3.ts';
 
     // Polygon/Matic Web3 API endpoint
-    const WEB3_RPC = "https://polygon-rpc.com";
+    const WEB3_RPC = "https://rpc.ankr.com/polygon";
 
     var err = "";
     var warn = "";
