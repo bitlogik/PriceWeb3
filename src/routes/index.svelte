@@ -315,10 +315,12 @@ const tokens = {
   <h1>PriceWeb3</h1>
   <div class="hero-body has-text-centered">
     <div class="login">
-      <div>DeFi Realtime Price<br>
-      <small>on SushiSwap (Polygon)</small></div>
+      <div>
+        DeFi Realtime Price<br>
+        <small>on SushiSwap (Polygon)</small>
+      </div>
       
-      <div class="columns is-mobile">
+      <div class="columns is-mobile ml-2">
             <div class="column">
               <div class="select">
                 <select on:change={pairChanged} bind:value={tokenA}>
@@ -333,7 +335,7 @@ const tokens = {
           <div class="column midcol">
             in
           </div>
-              <div class="column">
+              <div class="column mr-2">
                   <div class="select">
                     <select on:change={pairChanged} bind:value={tokenB}>
                         {#each Object.keys(tokens) as token2}
@@ -429,6 +431,10 @@ input {
 
 a {
   font-weight: 600;
+}
+
+small {
+  font-size: 0.75em;
 }
 
 @media (min-width: 720px) {

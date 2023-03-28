@@ -58,7 +58,7 @@
 		position: relative;
 		padding: 0;
 		margin: 0;
-		height: 3em;
+		height: 3.2em;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -76,7 +76,7 @@
 
     li > img {
         width: 32px;
-        margin-top: 6px;
+        margin-top: 8px;
     }
 
 	li.active::before {
@@ -98,7 +98,7 @@
 		padding: 0 1em;
 		color: var(--heading-color);
 		font-weight: 700;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
 		text-decoration: none;
