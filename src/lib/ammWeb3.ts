@@ -23,20 +23,19 @@ const decimalsMethod = "0x313ce567";
 const ZERO256 = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 class Web3RPC {
-    constructor(rpcURL, cbOK, cbErr) {
+    constructor(rpcURL, cbErr) {
         this.ws = null;
         this.callId = 0;
         if (rpcURL.startsWith("wss")) {
             // WebSocket
-            this.wsConnect(rpcURL, cbOK, cbErr);
+            this.wsConnect(rpcURL, cbErr);
         } else if (rpcURL.startsWith("https")) {
             // https
             this.RPCURL = rpcURL;
-            setTimeout(cbOK, 250);
         } else
             cbErr("Unsupported RPC connection scheme : wss or https.")
     }
-    wsConnect(rpcURL, cbOK, cbErr) {
+    wsConnect(rpcURL, cbErr) {
         this.ws = new WebSocket(rpcURL);
         this.ws.onerror = function (errEvent) {
             cbErr("Can't connect to the RPC API.")
@@ -45,10 +44,9 @@ class Web3RPC {
             this.ws = null;
             if (closeEvent.code == 1006) {
                 console.log("Reconnecting");
-                this.wsConnect(rpcURL, cbOK, cbErr);
+                this.wsConnect(rpcURL, cbErr);
             }
         };
-        this.ws.onopen = cbOK;
     }
     close() {
         if (this.ws != null) {

@@ -4,7 +4,7 @@
 
 <script lang="ts">
 
-    import {onDestroy, tick } from 'svelte';
+    import {onDestroy, tick, onMount} from 'svelte';
     import {Web3RPC} from '$lib/ammWeb3.ts';
 
     // Polygon/Matic Web3 API endpoint
@@ -222,8 +222,20 @@ const tokens = {
 
 
     var SushiSwapFactoryAddress = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
-    var tokenA = Object.keys(tokens)[0];  //  ETH
-    var tokenB = Object.keys(tokens)[5];  // USDC
+    const TokAInitIdx = 0;  //  ETH
+    const TokBInitIdx = 4;  // USDC
+
+    var tokenA = Object.keys(tokens)[TokAInitIdx];
+    var tokenB = Object.keys(tokens)[TokBInitIdx];
+
+    onMount(() => {
+        tick().then(() => {
+            var sels = document.getElementsByTagName('select');
+            sels[0].selectedIndex = TokAInitIdx;
+            sels[1].selectedIndex = TokBInitIdx;
+            getPrice();
+        });
+    })
 
     function setTimerID(timerId) {
         refreshTimerId = timerId;
@@ -288,17 +300,23 @@ const tokens = {
             side = 1;
         web3.getLivePrice(SushiSwapFactoryAddress, tokenAdata, tokenBdata, side, setTimerID, printPrice, printErr, printWarn);
     }
-    function pairChanged(evt) {
+    function pairAChanged(evt) {
+        tokenA = evt.target.value;
+        pairChanged();
+    }
+    function pairBChanged(evt) {
+        tokenB = evt.target.value;
+        pairChanged();
+    }
+    function pairChanged() {
         price = "";
         warn = "";
         err = "";
-        tick().then(() => { // Wait for tokens variable refreshed
-            closeAll();
-            getPrice();
-        });
+        closeAll();
+        getPrice();
     }
 
-    var web3 = new Web3RPC(WEB3_RPC, getPrice, printErr);
+    var web3 = new Web3RPC(WEB3_RPC, printErr);
 
 </script>
 
@@ -316,9 +334,9 @@ const tokens = {
       </div>
       
       <div class="columns is-mobile ml-2">
-                <select on:change={pairChanged} bind:value={tokenA}>
         <div class="column">
             <div class="select">
+                <select on:change={pairAChanged}>
                     {#each Object.keys(tokens) as token1}
                         <option value={token1}>
                             {token1}
@@ -329,10 +347,10 @@ const tokens = {
         </div>
         <div class="column midcol">
             in
-                    <select on:change={pairChanged} bind:value={tokenB}>
         </div>
         <div class="column mr-2">
             <div class="select">
+                <select on:change={pairBChanged}>
                     {#each Object.keys(tokens) as token2}
                         <option value={token2}>
                             {token2}
