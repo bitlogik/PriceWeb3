@@ -316,33 +316,32 @@ const tokens = {
       </div>
       
       <div class="columns is-mobile ml-2">
-            <div class="column">
-              <div class="select">
                 <select on:change={pairChanged} bind:value={tokenA}>
+        <div class="column">
+            <div class="select">
                     {#each Object.keys(tokens) as token1}
                         <option value={token1}>
                             {token1}
                         </option>
                     {/each}
                 </select>
-              </div>
             </div>
-          <div class="column midcol">
+        </div>
+        <div class="column midcol">
             in
-          </div>
-              <div class="column mr-2">
-                  <div class="select">
                     <select on:change={pairChanged} bind:value={tokenB}>
-                        {#each Object.keys(tokens) as token2}
-                            <option value={token2}>
-                                {token2}
-                            </option>
-                        {/each}
-                    </select>
-                  </div>
+        </div>
+        <div class="column mr-2">
+            <div class="select">
+                    {#each Object.keys(tokens) as token2}
+                        <option value={token2}>
+                            {token2}
+                        </option>
+                    {/each}
+                </select>
             </div>
+        </div>
       </div>
-      
       <div class="priceOut">
         {#if price}
             1 {token0Name} =<br>
@@ -374,10 +373,10 @@ section {
   padding-top: 1.5rem;
 }
 .select select:not([multiple]) {
-  padding-right: 0.8em;
+  padding-right: 0.9em;
 }
 .select:not(.is-multiple):not(.is-loading)::after {
-  right: 0.5em;
+  right: 0.4em;
 }
 .midcol {
   padding-top: 1.2em;
