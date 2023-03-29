@@ -16,9 +16,6 @@ const getPairMethod = "0xe6a43905";
 //   https://docs.uniswap.org/protocol/V2/reference/smart-contracts/pair
 // getReserves()
 const getReservesMethod = "0x0902f1ac";
-//  ERC20 calls for LP token
-// decimals()
-const decimalsMethod = "0x313ce567";
 
 const ZERO256 = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -110,16 +107,6 @@ class Web3RPC {
         }
         this.PostJSONRPC("eth_call", this.callId, params);
     }
-    getDecimals(contractAddr, cb, cbErr) {
-        var decodeReserve = (dataHex) => {
-            console.log("get decimals");
-            console.log(dataHex);
-            // decimals() returns (uint8 decimals)
-            const tokenDecimals = parseInt(dataHex.slice(2, 66), 16);
-            cb(tokenDecimals);
-        }
-        this.Web3Call(decimalsMethod, contractAddr, decodeReserve, cbErr);
-    }
     getPair(factoryContract, token0addr, token1addr, cb, cbErr){
         var decodePair = (dataHex) => {
             console.log("get pair");
@@ -139,20 +126,6 @@ class Web3RPC {
         token1uintAddr = "000000000000000000000000" + token1uintAddr;
         var dataArg = getPairMethod+ token0uintAddr + token1uintAddr;
         this.Web3Call(dataArg, factoryContract, decodePair, cbErr);
-    }
-    contractsDecimal(contractAddresses, cb, cbErr) {
-        // Input array of contract 2 addresses (the ERC20 smart-contracts pair)
-        // return (callback) array of decimals of the ERC20 tokens
-        var tokensDecimals = [];
-        var processToken1 = (decimal1) => {
-            tokensDecimals.push(decimal1);
-            cb(tokensDecimals);
-        }
-        var processToken0 = (decimal0) => {
-            tokensDecimals.push(decimal0);
-            this.getDecimals(contractAddresses[1], processToken1, cbErr);
-        }
-        this.getDecimals(contractAddresses[0], processToken0, cbErr);
     }
     getReserves(contractAddr, shift0, shift1, cb, cbErr) {
         var decodeReserve = (dataHex) => {
@@ -203,10 +176,8 @@ class Web3RPC {
                 // Callback to share the timerID
                 setTimerID(timerID);
             }
-            
-            // this.contractsDecimal(tokensContractArray, readPoolReserves, cbErr);
+
             readPoolReserves();
-            
         }
         this.getPair(swapFactory, token0.addr, token1.addr, readTokensContracts, cbErr);
     }
