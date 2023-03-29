@@ -24,7 +24,7 @@
   var beatHold = ["",""];
   var beatHoldPrices = ["",""];
   var generateX = (v, i) => {
-    return (i*0.05)+0.05;
+    return (i/tickStep)+2/tickStep;
   };
   var printPrice = (p) => {
     var priceValue = uprice * p;
@@ -98,7 +98,7 @@
       return 0.9;
     else if (window.innerWidth <= 900)
       return 1.5;
-    return 2;
+    return 1.75;
   };
   var changeInputRate = (evt) => {
     inputRate = evt.target.value;
@@ -163,6 +163,11 @@
     },
     interaction: {
       mode: 'index',
+    },
+    scales: {
+      y: {
+        max: 250,
+      }
     },
     plugins: {
       legend: {
