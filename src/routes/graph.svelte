@@ -15,7 +15,7 @@
       loadData();
   }
   var inputRate = "APR";
-  var tickStep = 20;  // 100% / 20 = 5%
+  var tickStep = 40;  // 100% / 40 = 2.5%
   var maxVar = 3.4;   // +240%
 
   var maxGain = "";
@@ -157,8 +157,8 @@
     elements: {
         point: {
           radius: 0,
-          hitRadius: 8,
-          hoverRadius: 8
+          hitRadius: 12,
+          hoverRadius: 6
         },
     },
     interaction: {
