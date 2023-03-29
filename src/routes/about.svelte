@@ -15,7 +15,7 @@
 	<h1>About</h1>
 
 	<p>
-		PriceWeb3 is a Web3 DeFi ticker. The PriceWeb3 web app displays in real-time some crypto-currencies tokens prices listed on a DeFi platform. The price is read in a decentralized way, directly from the blockchain source, by interacting with the <a href="https://academy.ivanontech.com/blog/decentralized-exchanges-what-is-a-dex" target="_blank">decentralized exchange "DEX"</a> smart-contracts. It computes and displays the price tickers of a DeFi exchange, from Web3 queries data.
+		PriceWeb3 is a Web3 DeFi ticker. The PriceWeb3 web app displays in real-time some crypto-currencies tokens prices listed on a DeFi platform. The price is read in a decentralized way, directly from the blockchain source, by interacting with the <a href="https://academy.ivanontech.com/blog/decentralized-exchanges-what-is-a-dex" target="_blank">decentralized exchange "DEX"</a> smart-contracts. It computes and displays the price tickers of a DeFi exchange, from Web3 queries data. Additionally, it can compute the impermanent loss of liquidity in a constant product automatic market (UniswapV2 AMM DEX). It displays various useful metrics for liquidity deposited in such AMMs.
 	</p>
 
 	<img class="cryptobox" src="/tokens.jpg">

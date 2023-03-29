@@ -122,7 +122,7 @@
 </svelte:head>
 
 <section class="hero">
-  <h1>PriceWeb3</h1>
+  <h1>Price Web3</h1>
   <div class="hero-body has-text-centered">
     <div class="login">
       <div>
