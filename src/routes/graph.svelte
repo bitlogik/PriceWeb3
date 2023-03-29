@@ -8,6 +8,8 @@
   var qrobj;
   var rate;
   var days;
+  var uprice;
+  var unit;
   $: {
       qrobj = $page.query;
       loadData();
@@ -18,20 +20,39 @@
 
   var maxGain = "";
   var ROI = "";
+  var ROIprice = "";
   var beatHold = ["",""];
+  var beatHoldPrices = ["",""];
   var generateX = (v, i) => {
     return (i*0.05)+0.05;
   };
+  var printPrice = (p) => {
+    var priceValue = uprice * p;
+    var commaPos = 2;
+    if (priceValue > 200)
+        commaPos = 0;
+    if (priceValue < 0.15)
+        commaPos = 5;
+    var tokPriceStr = priceValue.toFixed(commaPos);
+    if (commaPos < 3)
+        tokPriceStr = tokPriceStr.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+    return tokPriceStr + " " + unit;
+  }
   var genLabels = (x) => {
     var pcVar = (x-1)*100;
     var pcVarStr = "";
-    if (pcVar > 0)
-      pcVarStr += "+ " + pcVar.toFixed(0);
-    if (pcVar < 0)
-      pcVarStr += "- " + (-pcVar).toFixed(0);
-    if (pcVar == 0)
-      pcVarStr += "0";
-    return pcVarStr + " %";
+    if (uprice && uprice>0) {
+      return printPrice(x);
+    }
+    else {
+      if (pcVar > 0)
+        pcVarStr += "+ " + pcVar.toFixed(0);
+      if (pcVar < 0)
+        pcVarStr += "- " + (-pcVar).toFixed(0);
+      if (pcVar == 0)
+        pcVarStr += "0";
+      return pcVarStr + " %";
+    }
   }
   var holdValue = (x) => {
     return (x+1)/2;
@@ -84,14 +105,18 @@
     refreshData();
   }
   var refreshData = () => {
+    data.labels = xTick.map(genLabels);
     data.datasets[0].data = xTick.map(LPgain);
     data.datasets[1].data = xTick.map(relGain);
     maxGain = (LPgain(1)-100).toFixed(1);
-    ROI = solveGainLimit().toFixed(1);
-    beatHold = solveBeatHold().map(l=>l.toFixed(1));
+    var ROIn = solveGainLimit()
+    ROI = ROIn.toFixed(1);
+    ROIprice = printPrice(1+ROIn/100);
+    var beatHoldn = solveBeatHold();
+    beatHold = beatHoldn.map(l=>l.toFixed(1));
+    beatHoldPrices = beatHoldn.map(x=>1+x/100).map(printPrice);
   };
   let data = {
-    labels: xTick.map(genLabels),
     datasets: [
       {
         label: "Gain",
@@ -168,6 +193,8 @@ var loadData = () => {
   }
   rate = qrobj.get("rate")?qrobj.get("rate"):70 // APR %
   days = qrobj.get("days")?qrobj.get("days"):30 // days period
+  uprice = qrobj.get("price")?qrobj.get("price"):""
+  unit = "$";
   var titleDOM = document.getElementsByTagName("h2")[0]
   if(titleDOM)
     titleDOM.scrollIntoView();
@@ -183,7 +210,14 @@ onMount(loadData);
       Maximum gain : +{maxGain} % <br>
       <div class="has-text-weight-bold mt-2">One side variation limits</div>
       R.O.I. breakeven : {ROI} % and above<br>
-      Beat the hold : {beatHold[0]}% to +{beatHold[1]}%
+      {#if uprice && uprice>0}
+        ROI Price > {ROIprice}<br>
+      {/if}
+
+      Beat the hold : {beatHold[0]}% to +{beatHold[1]}%<br>
+      {#if uprice && uprice>0}
+        {beatHoldPrices[0]} > Price > {beatHoldPrices[1]}<br>
+      {/if}
     </div>
     <Line
       data={data}
@@ -226,6 +260,27 @@ onMount(loadData);
         bind:value={days}
         on:keyup={refreshData}
       >
+    </div>
+  </div>
+  <div class="columns is-mobile mb-3">
+    <div class="is-size-5 column is-offset-1 is-justify-content-end p-1 is-flex is-align-items-center ml-3">
+      Moving token initial price
+    </div>
+    <div class="column p-1 is-flex is-justify-content-start">
+      <input 
+        class="input"
+        type="text"
+        placeholder="$"
+        bind:value={uprice}
+        on:keyup={refreshData}
+      >
+      <select bind:value={unit} on:change={refreshData}>
+        <option>$</option>
+        <option>€</option>
+        <option>¥</option>
+        <option>£</option>
+        <option>¤</option>
+      </select>
     </div>
   </div>
   
