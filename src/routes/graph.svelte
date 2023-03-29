@@ -220,12 +220,12 @@ onMount(loadData);
       <div class="has-text-weight-bold mt-2">One side variation limits</div>
       R.O.I. breakeven : {ROI} % and above<br>
       {#if uprice && uprice>0}
-        ROI Price > {ROIprice}<br>
+        ROI Price &gt; {ROIprice}<br>
       {/if}
 
       Beat the hold : {beatHold[0]}% to +{beatHold[1]}%<br>
       {#if uprice && uprice>0}
-        {beatHoldPrices[0]} > Price > {beatHoldPrices[1]}<br>
+        {beatHoldPrices[0]} &lt; Price &lt; {beatHoldPrices[1]}<br>
       {/if}
     </div>
     <Line
@@ -294,14 +294,14 @@ onMount(loadData);
   </div>
   
   <div class="example mb-4">
-    This calculator is for automatic markets based on the constant product formula (x*y=K). It works for any services that implements the UniswapV2 protocol. Such as Quickswap, SushiSwap, Uniswap (v2),... This doesn't apply for different automatic markets with a different mechanism like Balancer or Curve.<br>
+    This calculator is for automatic markets liquidity deposit based on the constant product formula (x*y=K). It works for any services that implements the UniswapV2 protocol. Such as QuickSwap, SushiSwap, Uniswap (v2),... This doesn't apply for different automatic markets with a different mechanism like Balancer or Curve.<br>
     The X axis is the variation of one side. Like a half token side in the liquidity pool.<br>
     At the start of the period, fund is shared 50%/50% between the 2 sides of the liquidity pool.<br><br>
     
-    <span style="color:#000f89;font-weight:bold">Blue line</span> : What is the value you get by depositing $100 or a unit in liquidity after the defined period.<br>
+    <span style="color:#000f89;font-weight:bold">Blue line</span> : What is the value you get by depositing $100 in liquidity after the defined period.<br>
     <span style="color:#32cd32;font-weight:bold">Green line</span> : Relative percentage compared to the same amount kept as "holding" the 2 assets.<br>
     <span style="color:#ff7f50">Orange dashed</span> : What is the value you get by just "holding" the 2 assets. The green line is the ratio (or gap) between this orange line and the the blue line.<br>
-    <span style="color:#F60026">Red horizontal</span> : What is the value you get by keeping 100 stable units, like keeping $100 fund, you always get $100. This is the "ground 0 ROI" reference line.<br>
+    <span style="color:#F60026">Red horizontal</span> : What is the value you get by keeping 100 stable units, like keeping $100 in a fund, you always get $100. This is the "ground 0 ROI" reference line.<br>
     
     <br>Blue curve is above the orange dashed diagonal = Green curve is above the red horizontal "unit" : you gain money relative to keeping 50/50 coins aka "hold". Opposite : Blue is below the orange dashed = Green is below the horizontal "unit" = you lose money relative to keeping coins.<br>
     
