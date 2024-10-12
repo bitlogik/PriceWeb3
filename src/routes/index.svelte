@@ -5,11 +5,25 @@
 <script lang="ts">
 
     import {onDestroy, tick, onMount} from 'svelte';
-    import {Web3RPC} from '$lib/ammWeb3.ts';
+    import {Web3RPC} from '$lib/thinWeb3.js';
     import {tokens} from '$lib/tokens.js';
 
     // Polygon/Matic Web3 API endpoint
     const WEB3_RPC = "https://rpc.ankr.com/polygon";
+
+    const REFRESH_TIME = 15000; // in ms : every 15 seconds
+
+    // Uniswap v2 / SushiSwap and clones factory calls
+    // getPair(address,address)
+    const getPairMethod = "0xe6a43905";
+
+    // Uniswap v2 / SushiSwap and clones LP calls
+    //   For a pair, LP contract
+    //   https://docs.uniswap.org/protocol/V2/reference/smart-contracts/pair
+    // getReserves()
+    const getReservesMethod = "0x0902f1ac";
+
+    const ZERO256 = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
     var err = "";
     var warn = "";
@@ -48,6 +62,81 @@
     }
 
     onDestroy(closeAll);
+
+    function getPair(factoryContract, token0addr, token1addr, cb, cbErr){
+        var decodePair = (dataHex) => {
+            console.log("get pair");
+            console.log(dataHex);
+            if (dataHex == ZERO256 || dataHex == "0x")
+                cbErr("No market for this pair.")
+            else
+                cb("0x" + dataHex.slice(26));
+        }
+        var token0uintAddr = token0addr;
+        var token1uintAddr = token1addr;
+        if (token0uintAddr.startsWith("0x"))
+            token0uintAddr = token0uintAddr.slice(2);
+        if (token1uintAddr.startsWith("0x"))
+            token1uintAddr = token1uintAddr.slice(2);
+        token0uintAddr = "000000000000000000000000" + token0uintAddr;
+        token1uintAddr = "000000000000000000000000" + token1uintAddr;
+        var dataArg = getPairMethod+ token0uintAddr + token1uintAddr;
+        web3.Web3Call(dataArg, factoryContract, decodePair, cbErr);
+    }
+    function getReserves(contractAddr, shift0, shift1, cb, cbErr) {
+        var decodeReserve = (dataHex) => {
+            // getReserves returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast)
+            const reservesObj = {
+                "_reserve0": parseInt(dataHex.slice(2, 66 - shift0), 16),
+                "_reserve1": parseInt(dataHex.slice(66, 130 - shift1), 16),
+                "_blockTimestampLast": parseInt(dataHex.slice(130, 194), 16)
+            };
+            cb(reservesObj);
+        }
+        web3.Web3Call(getReservesMethod, contractAddr, decodeReserve, cbErr);
+    }
+    function getLivePrice(swapFactory, token0, token1, side, setTimerID, cb, cbErr, warnCb) {
+
+        var readTokensContracts = (pairContract) => {
+
+            var readPoolReserves = () => {
+
+                var computePrice = (resObj) => {
+                    var price = 0;
+                    console.log(resObj._reserve0);
+                    console.log(resObj._reserve1);
+                    if (resObj._reserve0 < 10000000 && resObj._reserve1 < 10000000)
+                        warnCb("Low liquidity and accuracy");
+                    if (side == 0)
+                        price = resObj._reserve1 / resObj._reserve0;
+                    else
+                        price = resObj._reserve0 / resObj._reserve1;
+                    cb(price * shiftFactor);
+                };
+
+                var TOKEN_0_UNIT = token0.decimals;
+                var TOKEN_1_UNIT = token1.decimals;
+                // Shift with hex reading a millionth of the token unit
+                var shift0 = Math.floor((3 * token0.decimals) / 4) - 5;
+                if (shift0 < 0)
+                    shift0 = 0;
+                var shift1 = Math.floor((3 * token1.decimals) / 4) - 5;
+                if (shift1 < 0)
+                    shift1 = 0;
+                var shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, token0.decimals - token1.decimals);
+                if (side == 1)
+                    [shift0, shift1] = [shift1, shift0];
+                getReserves(pairContract, shift0, shift1, computePrice, cbErr);
+                // Call getReserves every refresh time
+                var timerID = window.setInterval(getReserves.bind(this), REFRESH_TIME, pairContract, shift0, shift1, computePrice, cbErr);
+                // Callback to share the timerID
+                setTimerID(timerID);
+            }
+
+            readPoolReserves();
+        }
+        getPair(swapFactory, token0.addr, token1.addr, readTokensContracts, cbErr);
+    }
 
     function printErr(errTxt) {
         console.log("ERROR");
@@ -95,7 +184,7 @@
         var side = 0;
         if (parseInt(tokenAdata.addr, 16) > parseInt(tokenBdata.addr, 16))
             side = 1;
-        web3.getLivePrice(SushiSwapFactoryAddress, tokenAdata, tokenBdata, side, setTimerID, printPrice, printErr, printWarn);
+        getLivePrice(SushiSwapFactoryAddress, tokenAdata, tokenBdata, side, setTimerID, printPrice, printErr, printWarn);
     }
     function pairAChanged(evt) {
         tokenA = evt.target.value;
