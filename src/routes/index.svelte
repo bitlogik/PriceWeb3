@@ -9,8 +9,9 @@
     import {tokens} from '$lib/tokens.js';
 
     // Polygon/Matic Web3 API endpoint
-    const WEB3_RPC = "https://rpc.ankr.com/polygon";
-
+    const WEB3_RPC = "wss://polygon-bor-rpc.publicnode.com";
+    // const WEB3_RPC = "https://polygon-bor-rpc.publicnode.com";
+    
     const REFRESH_TIME = 15000; // in ms : every 15 seconds
 
     // Uniswap v2 / SushiSwap and clones factory calls
