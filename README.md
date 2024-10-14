@@ -12,6 +12,11 @@ PriceWeb3 is a small web application, where your browser gets the data by itself
 The PriceWeb3 app is designed to be simple and minimalist. Many methods are slim with zero-overhead, without any external dependency like web3js.
 It uses the <a href="https://kit.svelte.dev" target="_blank">SvelteKit JavaScript framework</a>, and <a href="https://bulma.io/" target="_blank">Bulma</a> for the styling. The app is a "JAMstack" <a href="https://en.wikipedia.org/wiki/Single-page_application" target="_blank">Single Page Application</a> bundled using <a href="https://vitejs.dev/guide/why.html" target="_blank">ViteJS</a>.
 
+## Requirements
+
+ * Node JS 14-18
+ * npm 6-9
+
 ## Developing
 
 Install dependencies once with `npm install` (or `yarn`), then start a development server :
@@ -40,6 +45,6 @@ Brotli "br" and/or gzip is highly recommended to be activated as content encodin
 
 The current recommended configuration for the Content-Security-Policy header is :  
 ```
-default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; connect-src 'self' https://rpc.ankr.com/polygon;
+default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; connect-src 'self' wss://polygon-bor-rpc.publicnode.com;
 ```
 
