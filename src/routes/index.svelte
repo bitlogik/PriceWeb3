@@ -44,7 +44,7 @@
             var sels = document.getElementsByTagName('select');
             sels[0].selectedIndex = TokAInitIdx;
             sels[1].selectedIndex = TokBInitIdx;
-            getPrice();
+            web3 = new Web3RPC(WEB3_RPC, getPrice, printErr);
         });
     })
 
@@ -199,10 +199,10 @@
         warn = "";
         err = "";
         closeAll();
-        getPrice();
+        web3 = new Web3RPC(WEB3_RPC, getPrice, printErr);
     }
 
-    var web3 = new Web3RPC(WEB3_RPC, printErr);
+    var web3 = null;
 
 </script>
 

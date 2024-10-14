@@ -5,19 +5,20 @@
 
 
 class Web3RPC {
-    constructor(rpcURL, cbErr) {
+    constructor(rpcURL, cbReady, cbErr) {
         this.ws = null;
         this.callId = 0;
         if (rpcURL.startsWith("wss")) {
             // WebSocket
-            this.wsConnect(rpcURL, cbErr);
+            this.wsConnect(rpcURL, cbReady, cbErr);
         } else if (rpcURL.startsWith("https")) {
             // https
             this.RPCURL = rpcURL;
+            setTimeout(cbReady, 200);
         } else
             cbErr("Unsupported RPC connection scheme : wss or https.")
     }
-    wsConnect(rpcURL, cbErr) {
+    wsConnect(rpcURL, cbReady, cbErr) {
         this.ws = new WebSocket(rpcURL);
         this.ws.onerror = function (errEvent) {
             cbErr("Can't connect to the RPC API.")
@@ -26,9 +27,12 @@ class Web3RPC {
             this.ws = null;
             if (closeEvent.code == 1006) {
                 console.log("Reconnecting");
-                this.wsConnect(rpcURL, cbErr);
+                this.wsConnect(rpcURL, cbReady, cbErr);
             }
         };
+        this.ws.onopen = function() {
+           cbReady();
+        }
     }
     close() {
         if (this.ws != null) {
