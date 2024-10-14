@@ -27,7 +27,6 @@
 	"type": "module",
 	"dependencies": {
 		"@fontsource/fira-mono": "^4.5.0",
-		"svelte-chartjs": "^1.1.4",
-		"svelte-table": "^0.6.1"
+		"svelte-chartjs": "^1.1.4"
 	}
 }
