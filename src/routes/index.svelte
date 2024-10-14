@@ -117,13 +117,13 @@
                 var TOKEN_0_UNIT = token0.decimals;
                 var TOKEN_1_UNIT = token1.decimals;
                 // Shift with hex reading a millionth of the token unit
-                var shift0 = Math.floor((3 * token0.decimals) / 4) - 5;
+                var shift0 = Math.floor((3 * TOKEN_0_UNIT) / 4) - 5;
                 if (shift0 < 0)
                     shift0 = 0;
-                var shift1 = Math.floor((3 * token1.decimals) / 4) - 5;
+                var shift1 = Math.floor((3 * TOKEN_1_UNIT) / 4) - 5;
                 if (shift1 < 0)
                     shift1 = 0;
-                var shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, token0.decimals - token1.decimals);
+                var shiftFactor = Math.pow(16, shift1 - shift0) * Math.pow(10, TOKEN_0_UNIT - TOKEN_1_UNIT);
                 if (side == 1)
                     [shift0, shift1] = [shift1, shift0];
                 getReserves(pairContract, shift0, shift1, computePrice, cbErr);
